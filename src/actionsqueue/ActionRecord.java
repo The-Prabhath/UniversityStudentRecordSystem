@@ -3,22 +3,15 @@ package actionsqueue;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Represents a single recorded action (e.g. "Added", "Updated", "Deleted")
- * performed on a student record. Instances are pushed onto the
- * ActionStack so recent actions / history can be displayed, satisfying
- * requirement 3 (recent actions / deleted records / undo history).
- *
- * Owned by: Member 2
- */
+
 public class ActionRecord {
 
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final String actionType;   // e.g. "ADD", "UPDATE", "DELETE"
+    private final String actionType;   
     private final String studentId;
-    private final String details;      // short human-readable description
+    private final String details;      
     private final LocalDateTime timestamp;
 
     public ActionRecord(String actionType, String studentId, String details) {
