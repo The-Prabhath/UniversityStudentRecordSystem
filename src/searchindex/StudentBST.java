@@ -4,11 +4,17 @@ import common.Student;
 
 /**
  * Binary Search Tree that organizes student records by Student ID,
- * enabling ordered display and O(log n) average-case search on a
+ * enabling ordered display and O(log n) average case search on a
  * balanced tree.
 
  * Covers assignment requirement 5 (BST/AVL to organize/search records
  * by Student ID).
+ *
+ * NOTE ON AVL: this is a standard (unbalanced) BST. If the team wants
+ * the AVL self-balancing variant instead, that would replace this class
+ * — the insert()/delete()/search()/displayAll() method signatures
+ * below are what SystemManager depends on, so an AVL version can be
+ * dropped in later without changing any other module.
  */
 public class StudentBST {
 
