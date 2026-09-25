@@ -130,5 +130,74 @@ public class SystemManager {
         return hashTable.getById(id);
     }
 
-    
+    // ------------------------------------------------------------
+    // Service request / action history operations
+    // Member 2: ServiceQueue (FIFO requests) + ActionStack (LIFO history)
+    // ------------------------------------------------------------
+
+    /** Menu item 5 (Member 2): add a service request to the back of the queue. */
+    public void addServiceRequest(String studentId, String requestType) {
+        serviceQueue.enqueue(new ServiceRequest(studentId, requestType));
+    }
+
+    /**
+     * Menu item 6 (Member 2): process (dequeue) the next pending service
+     * request and log it to the action history.
+     *
+     * @return the processed request, or null if the queue was empty.
+     */
+    public ServiceRequest processNextServiceRequest() {
+        ServiceRequest next = serviceQueue.dequeue();
+        if (next != null) {
+            actionStack.push(new ActionRecord("SERVICE", next.getStudentId(),
+                    "Processed request: " + next.getRequestType()));
+        }
+        return next;
+    }
+
+    /** (Member 2) Displays all pending service requests, in arrival order. */
+    public void displayServiceQueue() {
+        serviceQueue.displayQueue();
+    }
+
+    /** Menu item 7 (Member 2): display the recent-actions history, most recent first. */
+    public void displayRecentActions() {
+        actionStack.displayRecentActions();
+    }
+
+    // ------------------------------------------------------------
+    // Campus graph operations
+    // Member 4: CampusGraph (locations/roads as an adjacency list)
+    // + GraphTraversal (BFS/DFS over that graph)
+    // ------------------------------------------------------------
+
+    /** Menu item 10 (Member 4): add a campus location (graph vertex). */
+    public boolean addCampusLocation(String location) {
+        return campusGraph.addLocation(location);
+    }
+
+    /** Menu item 11 (Member 4): remove a campus location and its connections. */
+    public boolean removeCampusLocation(String location) {
+        return campusGraph.removeLocation(location);
+    }
+
+    /** Menu item 12 (Member 4): add a two-way connection/road between two locations. */
+    public boolean addCampusConnection(String locationA, String locationB) {
+        return campusGraph.addConnection(locationA, locationB);
+    }
+
+    /** Menu item 13 (Member 4): remove the connection/road between two locations. */
+    public boolean removeCampusConnection(String locationA, String locationB) {
+        return campusGraph.removeConnection(locationA, locationB);
+    }
+
+    /** Menu item 14 (Member 4): display the full campus adjacency list. */
+    public void displayCampusConnections() {
+        campusGraph.displayConnections();
+    }
+
+    /** Menu item 15 (Member 4): traverse the campus network using BFS or DFS. */
+    public void traverseCampus(String startLocation, boolean useBFS) {
+        graphTraversal.displayTraversal(campusGraph, startLocation, useBFS);
+    }
 }
