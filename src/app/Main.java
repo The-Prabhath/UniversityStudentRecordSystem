@@ -104,7 +104,71 @@ public class Main {
     // SystemManager and each member's own module classes).
     // ------------------------------------------------------------
 
-    
+    // ---- Member 1: Student Records — add/update/delete prompts ----
+
+    private static void addStudent(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter Student ID: ");
+        String id = scanner.nextLine().trim();
+        System.out.print("Enter Name: ");
+        String name = scanner.nextLine().trim();
+        System.out.print("Enter Programme: ");
+        String programme = scanner.nextLine().trim();
+        double marks = readDouble(scanner, "Enter Marks: ");
+
+        if (manager.addStudent(id, name, programme, marks)) {
+            System.out.println("Student added successfully.");
+        } else {
+            System.out.println("Could not add student: a student with ID \"" + id + "\" already exists.");
+        }
+    }
+
+    private static void updateStudent(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter Student ID to update: ");
+        String id = scanner.nextLine().trim();
+        System.out.print("Enter new Name: ");
+        String name = scanner.nextLine().trim();
+        System.out.print("Enter new Programme: ");
+        String programme = scanner.nextLine().trim();
+        double marks = readDouble(scanner, "Enter new Marks: ");
+
+        if (manager.updateStudent(id, name, programme, marks)) {
+            System.out.println("Student updated successfully.");
+        } else {
+            System.out.println("Could not update: no student found with ID \"" + id + "\".");
+        }
+    }
+
+    private static void deleteStudent(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter Student ID to delete: ");
+        String id = scanner.nextLine().trim();
+
+        if (manager.deleteStudent(id)) {
+            System.out.println("Student deleted successfully.");
+        } else {
+            System.out.println("Could not delete: no student found with ID \"" + id + "\".");
+        }
+    }
+
+    // ---- Member 2: Actions Queue — service request prompts ----
+
+    private static void addServiceRequest(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter Student ID: ");
+        String id = scanner.nextLine().trim();
+        System.out.print("Enter Request Type (e.g. Transcript Request): ");
+        String requestType = scanner.nextLine().trim();
+
+        manager.addServiceRequest(id, requestType);
+        System.out.println("Service request added to the queue.");
+    }
+
+    private static void processNextServiceRequest(SystemManager manager) {
+        var next = manager.processNextServiceRequest();
+        if (next == null) {
+            System.out.println("No pending service requests.");
+        } else {
+            System.out.println("Processing: " + next);
+        }
+    }
 
     // ---- Member 3: Search Index — hash lookup prompt ----
 
@@ -120,7 +184,77 @@ public class Main {
         }
     }
 
-    
+    // ---- Member 4: Campus Graph — location/connection/traversal prompts ----
+
+    private static void addCampusLocation(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter new location name: ");
+        String location = scanner.nextLine().trim();
+
+        if (manager.addCampusLocation(location)) {
+            System.out.println("Location added successfully.");
+        } else {
+            System.out.println("Could not add location: it already exists or the name is blank.");
+        }
+    }
+
+    private static void removeCampusLocation(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter location name to remove: ");
+        String location = scanner.nextLine().trim();
+
+        if (manager.removeCampusLocation(location)) {
+            System.out.println("Location removed successfully.");
+        } else {
+            System.out.println("Could not remove: location \"" + location + "\" was not found.");
+        }
+    }
+
+    private static void addCampusConnection(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter first location: ");
+        String a = scanner.nextLine().trim();
+        System.out.print("Enter second location: ");
+        String b = scanner.nextLine().trim();
+
+        if (manager.addCampusConnection(a, b)) {
+            System.out.println("Connection added successfully.");
+        } else {
+            System.out.println("Could not add connection: check that both locations exist and aren't already connected.");
+        }
+    }
+
+    private static void removeCampusConnection(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter first location: ");
+        String a = scanner.nextLine().trim();
+        System.out.print("Enter second location: ");
+        String b = scanner.nextLine().trim();
+
+        if (manager.removeCampusConnection(a, b)) {
+            System.out.println("Connection removed successfully.");
+        } else {
+            System.out.println("Could not remove connection: it does not exist.");
+        }
+    }
+
+    private static void traverseCampus(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter starting location: ");
+        String start = scanner.nextLine().trim();
+        System.out.print("Use BFS instead of DFS? (y/n): ");
+        boolean useBFS = scanner.nextLine().trim().equalsIgnoreCase("y");
+
+        manager.traverseCampus(start, useBFS);
+    }
+
+    /** Reads a double from the scanner, re-prompting on invalid input. */
+    private static double readDouble(Scanner scanner, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String line = scanner.nextLine().trim();
+            try {
+                return Double.parseDouble(line);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number, please try again.");
+            }
+        }
+    }
 
     private static void printMenu() {
         System.out.println("===== University Student Record and Campus Route Management System =====");
