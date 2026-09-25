@@ -1,5 +1,16 @@
 package app;
 
+import actionsqueue.ActionRecord;
+import actionsqueue.ActionStack;
+import actionsqueue.ServiceQueue;
+import actionsqueue.ServiceRequest;
+import campusgraph.CampusGraph;
+import campusgraph.GraphTraversal;
+import common.Student;
+import searchindex.StudentBST;
+import searchindex.StudentHashTable;
+import studentrecords.StudentLinkedList;
+
 /**
  * Central integration point for the whole system. Holds one instance
  * of each member's module and coordinates operations that need to
@@ -7,85 +18,117 @@ package app;
  * linked list, BST, and hash table together, then logs it to the
  * action stack).
  *
- * THIS IS A SKELETON, pushed to main on Day 1 so every member's
- * branch starts from the same base. Fields are commented out below —
- * as each member's Pull Request is merged into main, uncomment their
- * field, initialize it in the constructor, and add the orchestration
- * methods that use it.
- *
- * Do NOT let two people edit this file's TODO sections for different
- * modules on the same day without pulling/pushing in between — merge
- * PRs one at a time and update this file right after each merge.
+ * SYNC NOTE: addStudent() inserts the exact same Student object into
+ * the linked list, the BST, and the hash table. Because all three
+ * structures hold a reference to that one object, updateStudent()
+ * only needs to mutate it once (via the linked list) — the change is
+ * automatically visible through the BST and hash table too, since a
+ * student's ID (the BST/hash key) never changes on update. Deleting
+ * a student still has to be done in all three structures explicitly,
+ * since removing a node from one structure does not remove it from
+ * the others.
  */
 public class SystemManager {
 
     // ---- Member 1: Linked List ----
-    // private studentrecords.StudentLinkedList linkedList;
+    private final StudentLinkedList linkedList;
 
     // ---- Member 2: Stack and Queue ----
-    // private actionsqueue.ActionStack actionStack;
-    // private actionsqueue.ServiceQueue serviceQueue;
+    private final ActionStack actionStack;
+    private final ServiceQueue serviceQueue;
 
     // ---- Member 3: BST and Hashing ----
-    // private searchindex.StudentBST bst;
-    // private searchindex.StudentHashTable hashTable;
+    private final StudentBST bst;
+    private final StudentHashTable hashTable;
 
     // ---- Member 4: Graph ----
-    // private campusgraph.CampusGraph campusGraph;
-    // private campusgraph.GraphTraversal graphTraversal;
+    private final CampusGraph campusGraph;
+    private final GraphTraversal graphTraversal;
 
     public SystemManager() {
-        // Initialize each module's object here once its field above
-        // is uncommented, e.g.:
-        // linkedList = new studentrecords.StudentLinkedList();
+        linkedList = new StudentLinkedList();
+        actionStack = new ActionStack();
+        serviceQueue = new ServiceQueue();
+        bst = new StudentBST();
+        hashTable = new StudentHashTable();
+        campusGraph = new CampusGraph();
+        graphTraversal = new GraphTraversal();
     }
 
     // ------------------------------------------------------------
-    // TODO (integration, after Member 1 + Member 3 are merged):
-    //
-    // public boolean addStudent(String id, String name, String programme, double marks) {
-    //     if (hashTable.getById(id) != null) {
-    //         return false; // duplicate ID
-    //     }
-    //     common.Student student = new common.Student(id, name, programme, marks);
-    //     linkedList.addStudent(student);
-    //     bst.insert(student);
-    //     hashTable.put(student);
-    //     actionStack.push(new actionsqueue.ActionRecord("ADD", id, "Student added"));
-    //     return true;
-    // }
-    //
-    // Follow the same pattern for updateStudent() and deleteStudent():
-    // update/remove from linkedList + bst + hashTable, then log to
-    // actionStack.
+    // Student record operations
+    // Member 1 (linked list) does the add/update/delete/display work;
+    // Member 3 (BST + hash table) is kept in sync alongside it.
     // ------------------------------------------------------------
 
-    // ------------------------------------------------------------
-    // TODO (integration, after Member 2 is merged):
-    //
-    // public void addServiceRequest(String studentId, String requestType) {
-    //     serviceQueue.enqueue(new actionsqueue.ServiceRequest(studentId, requestType));
-    // }
-    //
-    // public void processNextServiceRequest() {
-    //     actionsqueue.ServiceRequest next = serviceQueue.dequeue();
-    //     if (next == null) {
-    //         System.out.println("No pending service requests.");
-    //     } else {
-    //         System.out.println("Processing: " + next);
-    //     }
-    // }
-    // ------------------------------------------------------------
+    /**
+     * Adds a student to the linked list, BST, and hash table together,
+     * then logs the action. The hash table is checked first since it
+     * gives the fastest duplicate-ID check.
+     *
+     * @return true if added, false if the Student ID already exists.
+     */
+    public boolean addStudent(String id, String name, String programme, double marks) {
+        if (hashTable.getById(id) != null) {
+            return false; // duplicate ID
+        }
+        Student student = new Student(id, name, programme, marks);
+        linkedList.addStudent(student);
+        bst.insert(student);
+        hashTable.put(student);
+        actionStack.push(new ActionRecord("ADD", id, "Student added"));
+        return true;
+    }
 
-    // ------------------------------------------------------------
-    // TODO (integration, after Member 4 is merged):
-    //
-    // public void addCampusLocation(String location) {
-    //     campusGraph.addLocation(location);
-    // }
-    //
-    // public void traverseCampus(String startLocation, boolean useBFS) {
-    //     graphTraversal.displayTraversal(campusGraph, startLocation, useBFS);
-    // }
-    // ------------------------------------------------------------
+    /**
+     * Updates a student's name, programme, and marks. Only the linked
+     * list needs to be told directly — see the class-level SYNC NOTE
+     * for why the BST and hash table pick up the change automatically.
+     *
+     * @return true if the student was found and updated, false otherwise.
+     */
+    public boolean updateStudent(String id, String newName, String newProgramme, double newMarks) {
+        if (hashTable.getById(id) == null) {
+            return false; // not found
+        }
+        boolean updated = linkedList.updateStudent(id, newName, newProgramme, newMarks);
+        if (updated) {
+            actionStack.push(new ActionRecord("UPDATE", id, "Student record updated"));
+        }
+        return updated;
+    }
+
+    /**
+     * Removes a student from the linked list, BST, and hash table
+     * together, then logs the action.
+     *
+     * @return true if the student existed and was removed, false otherwise.
+     */
+    public boolean deleteStudent(String id) {
+        Student removed = linkedList.deleteStudent(id);
+        if (removed == null) {
+            return false; // not found
+        }
+        bst.delete(id);
+        hashTable.remove(id);
+        actionStack.push(new ActionRecord("DELETE", id, "Student removed"));
+        return true;
+    }
+
+    /** Menu item 4 (Member 1): display all records in insertion order (linked list). */
+    public void displayAllStudents() {
+        linkedList.displayAll();
+    }
+
+    /** Menu item 8 (Member 3): display all records in ID order (BST in-order traversal). */
+    public void displayStudentsByBST() {
+        bst.displayAll();
+    }
+
+    /** Menu item 9 (Member 3): fast lookup by ID via the hash table. */
+    public Student searchStudentByHash(String id) {
+        return hashTable.getById(id);
+    }
+
+    
 }
