@@ -1,25 +1,15 @@
 package app;
 
+import common.Student;
+
 import java.util.Scanner;
 
 /**
  * Entry point for the University Student Record and Campus Route
  * Management System.
  *
- * THIS IS A SKELETON. It only prints the menu and reads the user's
- * choice — it does not yet call into any module. As each member's
- * module is merged into main and wired into SystemManager, the TODO
- * blocks below get replaced with real calls, e.g.:
- *
- *     case 1:
- *         System.out.print("Enter Student ID: ");
- *         String id = scanner.nextLine();
- *         ... collect other fields ...
- *         manager.addStudent(id, name, programme, marks);
- *         break;
- *
- * Main.java should stay thin — all real logic belongs in
- * SystemManager.java or inside each member's own module classes.
+ * Main.java stays thin — it only reads menu input and validates it,
+ * then delegates all real logic to SystemManager.
  */
 public class Main {
 
@@ -42,66 +32,59 @@ public class Main {
             }
 
             switch (choice) {
+                // ---- Member 1: Student Records (linked list) ----
                 case 1:
-                    // TODO (Member 1 + integration): Add Student Record
-                    System.out.println("[Not yet implemented] Add Student Record");
+                    addStudent(scanner, manager);
                     break;
                 case 2:
-                    // TODO (Member 1 + integration): Update Student Record
-                    System.out.println("[Not yet implemented] Update Student Record");
+                    updateStudent(scanner, manager);
                     break;
                 case 3:
-                    // TODO (Member 1 + integration): Delete Student Record
-                    System.out.println("[Not yet implemented] Delete Student Record");
+                    deleteStudent(scanner, manager);
                     break;
                 case 4:
-                    // TODO (Member 1): Display All Records using Linked List
-                    System.out.println("[Not yet implemented] Display All Records (Linked List)");
+                    manager.displayAllStudents();
                     break;
+
+                // ---- Member 2: Actions Queue (stack + service queue) ----
                 case 5:
-                    // TODO (Member 2): Add Service Request to Queue
-                    System.out.println("[Not yet implemented] Add Service Request");
+                    addServiceRequest(scanner, manager);
                     break;
                 case 6:
-                    // TODO (Member 2): Process Next Service Request
-                    System.out.println("[Not yet implemented] Process Next Service Request");
+                    processNextServiceRequest(manager);
                     break;
                 case 7:
-                    // TODO (Member 2): Display Recent Actions using Stack
-                    System.out.println("[Not yet implemented] Display Recent Actions");
+                    manager.displayRecentActions();
                     break;
+
+                // ---- Member 3: Search Index (BST + hash table) ----
                 case 8:
-                    // TODO (Member 3): Display Students using BST/AVL
-                    System.out.println("[Not yet implemented] Display Students (BST)");
+                    manager.displayStudentsByBST();
                     break;
                 case 9:
-                    // TODO (Member 3): Search Student using Hashing
-                    System.out.println("[Not yet implemented] Search Student (Hashing)");
+                    searchStudentByHash(scanner, manager);
                     break;
+
+                // ---- Member 4: Campus Graph (locations + BFS/DFS) ----
                 case 10:
-                    // TODO (Member 4): Add Campus Location
-                    System.out.println("[Not yet implemented] Add Campus Location");
+                    addCampusLocation(scanner, manager);
                     break;
                 case 11:
-                    // TODO (Member 4): Remove Campus Location
-                    System.out.println("[Not yet implemented] Remove Campus Location");
+                    removeCampusLocation(scanner, manager);
                     break;
                 case 12:
-                    // TODO (Member 4): Add Campus Connection/Road
-                    System.out.println("[Not yet implemented] Add Campus Connection/Road");
+                    addCampusConnection(scanner, manager);
                     break;
                 case 13:
-                    // TODO (Member 4): Remove Campus Connection/Road
-                    System.out.println("[Not yet implemented] Remove Campus Connection/Road");
+                    removeCampusConnection(scanner, manager);
                     break;
                 case 14:
-                    // TODO (Member 4): Display Campus Connections
-                    System.out.println("[Not yet implemented] Display Campus Connections");
+                    manager.displayCampusConnections();
                     break;
                 case 15:
-                    // TODO (Member 4): Traverse Campus Locations using BFS or DFS
-                    System.out.println("[Not yet implemented] Traverse Campus Locations");
+                    traverseCampus(scanner, manager);
                     break;
+
                 case 16:
                     System.out.println("Exiting system. Goodbye!");
                     running = false;
@@ -115,6 +98,29 @@ public class Main {
 
         scanner.close();
     }
+
+    // ------------------------------------------------------------
+    // Menu action helpers (Main stays thin; all real logic is in
+    // SystemManager and each member's own module classes).
+    // ------------------------------------------------------------
+
+    
+
+    // ---- Member 3: Search Index — hash lookup prompt ----
+
+    private static void searchStudentByHash(Scanner scanner, SystemManager manager) {
+        System.out.print("Enter Student ID to search: ");
+        String id = scanner.nextLine().trim();
+
+        Student result = manager.searchStudentByHash(id);
+        if (result == null) {
+            System.out.println("No student found with ID \"" + id + "\".");
+        } else {
+            System.out.println("Found: " + result);
+        }
+    }
+
+    
 
     private static void printMenu() {
         System.out.println("===== University Student Record and Campus Route Management System =====");
