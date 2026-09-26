@@ -1,21 +1,22 @@
 package app;
 
+import actionsqueue.ServiceRequest;
+import common.InputValidator;
 import common.Student;
 
 import java.util.Scanner;
 
 /**
  * Entry point for the University Student Record and Campus Route
- * Management System.
- *
- * Main.java stays thin — it only reads menu input and validates it,
- * then delegates all real logic to SystemManager.
+ * Management System. Handles menu display and user input only — all
+ * real logic lives in SystemManager and the individual module classes.
  */
 public class Main {
 
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final SystemManager manager = new SystemManager();
+
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        SystemManager manager = new SystemManager();
         boolean running = true;
 
         while (running) {
@@ -32,65 +33,26 @@ public class Main {
             }
 
             switch (choice) {
-                // ---- Member 1: Student Records (linked list) ----
-                case 1:
-                    addStudent(scanner, manager);
-                    break;
-                case 2:
-                    updateStudent(scanner, manager);
-                    break;
-                case 3:
-                    deleteStudent(scanner, manager);
-                    break;
-                case 4:
-                    manager.displayAllStudents();
-                    break;
-
-                // ---- Member 2: Actions Queue (stack + service queue) ----
-                case 5:
-                    addServiceRequest(scanner, manager);
-                    break;
-                case 6:
-                    processNextServiceRequest(manager);
-                    break;
-                case 7:
-                    manager.displayRecentActions();
-                    break;
-
-                // ---- Member 3: Search Index (BST + hash table) ----
-                case 8:
-                    manager.displayStudentsByBST();
-                    break;
-                case 9:
-                    searchStudentByHash(scanner, manager);
-                    break;
-
-                // ---- Member 4: Campus Graph (locations + BFS/DFS) ----
-                case 10:
-                    addCampusLocation(scanner, manager);
-                    break;
-                case 11:
-                    removeCampusLocation(scanner, manager);
-                    break;
-                case 12:
-                    addCampusConnection(scanner, manager);
-                    break;
-                case 13:
-                    removeCampusConnection(scanner, manager);
-                    break;
-                case 14:
-                    manager.displayCampusConnections();
-                    break;
-                case 15:
-                    traverseCampus(scanner, manager);
-                    break;
-
-                case 16:
+                case 1 -> handleAddStudent();
+                case 2 -> handleUpdateStudent();
+                case 3 -> handleDeleteStudent();
+                case 4 -> manager.displayAllStudentsLinkedList();
+                case 5 -> handleAddServiceRequest();
+                case 6 -> handleProcessServiceRequest();
+                case 7 -> manager.displayRecentActions();
+                case 8 -> manager.displayAllStudentsBST();
+                case 9 -> handleSearchStudent();
+                case 10 -> handleAddCampusLocation();
+                case 11 -> handleRemoveCampusLocation();
+                case 12 -> handleAddCampusConnection();
+                case 13 -> handleRemoveCampusConnection();
+                case 14 -> manager.displayCampusConnections();
+                case 15 -> handleTraverseCampus();
+                case 16 -> {
                     System.out.println("Exiting system. Goodbye!");
                     running = false;
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 16.");
+                }
+                default -> System.out.println("Invalid choice. Please enter a number between 1 and 16.");
             }
 
             System.out.println();
@@ -99,161 +61,159 @@ public class Main {
         scanner.close();
     }
 
-    // ------------------------------------------------------------
-    // Menu action helpers (Main stays thin; all real logic is in
-    // SystemManager and each member's own module classes).
-    // ------------------------------------------------------------
+    // ================= Menu Handlers =================
 
-    // ---- Member 1: Student Records — add/update/delete prompts ----
-
-    private static void addStudent(Scanner scanner, SystemManager manager) {
+    private static void handleAddStudent() {
         System.out.print("Enter Student ID: ");
         String id = scanner.nextLine().trim();
+        if (!InputValidator.isValidId(id)) {
+            System.out.println("Invalid Student ID. It cannot be empty.");
+            return;
+        }
+
         System.out.print("Enter Name: ");
         String name = scanner.nextLine().trim();
+        if (!InputValidator.isNonEmpty(name)) {
+            System.out.println("Invalid name. It cannot be empty.");
+            return;
+        }
+
         System.out.print("Enter Programme: ");
         String programme = scanner.nextLine().trim();
-        double marks = readDouble(scanner, "Enter Marks: ");
-
-        if (manager.addStudent(id, name, programme, marks)) {
-            System.out.println("Student added successfully.");
-        } else {
-            System.out.println("Could not add student: a student with ID \"" + id + "\" already exists.");
+        if (!InputValidator.isNonEmpty(programme)) {
+            System.out.println("Invalid programme. It cannot be empty.");
+            return;
         }
+
+        System.out.print("Enter Marks (0-100): ");
+        double marks = InputValidator.parseMarks(scanner.nextLine());
+        if (!InputValidator.isValidMarks(marks)) {
+            System.out.println("Invalid marks. Must be a number between 0 and 100.");
+            return;
+        }
+
+        String result = manager.addStudent(id, name, programme, marks);
+        System.out.println(result.equals("OK") ? "Student added successfully." : result);
     }
 
-    private static void updateStudent(Scanner scanner, SystemManager manager) {
+    private static void handleUpdateStudent() {
         System.out.print("Enter Student ID to update: ");
         String id = scanner.nextLine().trim();
+
         System.out.print("Enter new Name: ");
         String name = scanner.nextLine().trim();
+        if (!InputValidator.isNonEmpty(name)) {
+            System.out.println("Invalid name. It cannot be empty.");
+            return;
+        }
+
         System.out.print("Enter new Programme: ");
         String programme = scanner.nextLine().trim();
-        double marks = readDouble(scanner, "Enter new Marks: ");
-
-        if (manager.updateStudent(id, name, programme, marks)) {
-            System.out.println("Student updated successfully.");
-        } else {
-            System.out.println("Could not update: no student found with ID \"" + id + "\".");
+        if (!InputValidator.isNonEmpty(programme)) {
+            System.out.println("Invalid programme. It cannot be empty.");
+            return;
         }
+
+        System.out.print("Enter new Marks (0-100): ");
+        double marks = InputValidator.parseMarks(scanner.nextLine());
+        if (!InputValidator.isValidMarks(marks)) {
+            System.out.println("Invalid marks. Must be a number between 0 and 100.");
+            return;
+        }
+
+        String result = manager.updateStudent(id, name, programme, marks);
+        System.out.println(result.equals("OK") ? "Student updated successfully." : result);
     }
 
-    private static void deleteStudent(Scanner scanner, SystemManager manager) {
+    private static void handleDeleteStudent() {
         System.out.print("Enter Student ID to delete: ");
         String id = scanner.nextLine().trim();
-
-        if (manager.deleteStudent(id)) {
-            System.out.println("Student deleted successfully.");
-        } else {
-            System.out.println("Could not delete: no student found with ID \"" + id + "\".");
-        }
+        String result = manager.deleteStudent(id);
+        System.out.println(result.equals("OK") ? "Student deleted successfully." : result);
     }
 
-    // ---- Member 2: Actions Queue — service request prompts ----
-
-    private static void addServiceRequest(Scanner scanner, SystemManager manager) {
+    private static void handleAddServiceRequest() {
         System.out.print("Enter Student ID: ");
         String id = scanner.nextLine().trim();
-        System.out.print("Enter Request Type (e.g. Transcript Request): ");
-        String requestType = scanner.nextLine().trim();
-
-        manager.addServiceRequest(id, requestType);
-        System.out.println("Service request added to the queue.");
+        if (!InputValidator.isValidId(id)) {
+            System.out.println("Invalid Student ID.");
+            return;
+        }
+        System.out.print("Enter Request Type (e.g. Transcript, ID Card): ");
+        String type = scanner.nextLine().trim();
+        if (!InputValidator.isNonEmpty(type)) {
+            System.out.println("Invalid request type.");
+            return;
+        }
+        manager.addServiceRequest(id, type);
+        System.out.println("Service request added to queue.");
     }
 
-    private static void processNextServiceRequest(SystemManager manager) {
-        var next = manager.processNextServiceRequest();
-        if (next == null) {
+    private static void handleProcessServiceRequest() {
+        ServiceRequest processed = manager.processNextServiceRequest();
+        if (processed == null) {
             System.out.println("No pending service requests.");
         } else {
-            System.out.println("Processing: " + next);
+            System.out.println("Processed: " + processed);
         }
     }
 
-    // ---- Member 3: Search Index — hash lookup prompt ----
-
-    private static void searchStudentByHash(Scanner scanner, SystemManager manager) {
+    private static void handleSearchStudent() {
         System.out.print("Enter Student ID to search: ");
         String id = scanner.nextLine().trim();
-
-        Student result = manager.searchStudentByHash(id);
-        if (result == null) {
+        Student found = manager.searchStudentByHash(id);
+        if (found == null) {
             System.out.println("No student found with ID \"" + id + "\".");
         } else {
-            System.out.println("Found: " + result);
+            System.out.println("Found: " + found);
         }
     }
 
-    // ---- Member 4: Campus Graph — location/connection/traversal prompts ----
-
-    private static void addCampusLocation(Scanner scanner, SystemManager manager) {
-        System.out.print("Enter new location name: ");
+    private static void handleAddCampusLocation() {
+        System.out.print("Enter location name: ");
         String location = scanner.nextLine().trim();
-
-        if (manager.addCampusLocation(location)) {
-            System.out.println("Location added successfully.");
-        } else {
-            System.out.println("Could not add location: it already exists or the name is blank.");
+        if (!InputValidator.isNonEmpty(location)) {
+            System.out.println("Invalid location name.");
+            return;
         }
+        boolean added = manager.addCampusLocation(location);
+        System.out.println(added ? "Location added." : "That location already exists.");
     }
 
-    private static void removeCampusLocation(Scanner scanner, SystemManager manager) {
+    private static void handleRemoveCampusLocation() {
         System.out.print("Enter location name to remove: ");
         String location = scanner.nextLine().trim();
-
-        if (manager.removeCampusLocation(location)) {
-            System.out.println("Location removed successfully.");
-        } else {
-            System.out.println("Could not remove: location \"" + location + "\" was not found.");
-        }
+        boolean removed = manager.removeCampusLocation(location);
+        System.out.println(removed ? "Location removed." : "Location not found.");
     }
 
-    private static void addCampusConnection(Scanner scanner, SystemManager manager) {
+    private static void handleAddCampusConnection() {
         System.out.print("Enter first location: ");
         String a = scanner.nextLine().trim();
         System.out.print("Enter second location: ");
         String b = scanner.nextLine().trim();
-
-        if (manager.addCampusConnection(a, b)) {
-            System.out.println("Connection added successfully.");
-        } else {
-            System.out.println("Could not add connection: check that both locations exist and aren't already connected.");
-        }
+        boolean added = manager.addCampusConnection(a, b);
+        System.out.println(added ? "Connection added." :
+                "Could not add connection — check both locations exist and aren't already connected.");
     }
 
-    private static void removeCampusConnection(Scanner scanner, SystemManager manager) {
+    private static void handleRemoveCampusConnection() {
         System.out.print("Enter first location: ");
         String a = scanner.nextLine().trim();
         System.out.print("Enter second location: ");
         String b = scanner.nextLine().trim();
-
-        if (manager.removeCampusConnection(a, b)) {
-            System.out.println("Connection removed successfully.");
-        } else {
-            System.out.println("Could not remove connection: it does not exist.");
-        }
+        boolean removed = manager.removeCampusConnection(a, b);
+        System.out.println(removed ? "Connection removed." :
+                "Could not remove connection — it may not exist.");
     }
 
-    private static void traverseCampus(Scanner scanner, SystemManager manager) {
+    private static void handleTraverseCampus() {
         System.out.print("Enter starting location: ");
         String start = scanner.nextLine().trim();
-        System.out.print("Use BFS instead of DFS? (y/n): ");
-        boolean useBFS = scanner.nextLine().trim().equalsIgnoreCase("y");
-
+        System.out.print("Traverse using (1) BFS or (2) DFS? ");
+        String choice = scanner.nextLine().trim();
+        boolean useBFS = !choice.equals("2");
         manager.traverseCampus(start, useBFS);
-    }
-
-    /** Reads a double from the scanner, re-prompting on invalid input. */
-    private static double readDouble(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String line = scanner.nextLine().trim();
-            try {
-                return Double.parseDouble(line);
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number, please try again.");
-            }
-        }
     }
 
     private static void printMenu() {
