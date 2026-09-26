@@ -78,4 +78,8 @@ public class ActionStack {
             count++;
         }
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
