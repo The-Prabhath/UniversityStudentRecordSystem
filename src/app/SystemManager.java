@@ -14,34 +14,26 @@ import studentrecords.StudentLinkedList;
 /**
  * Central integration point for the whole system. Holds one instance
  * of each member's module and coordinates operations that need to
- * touch more than one module (e.g. adding a student updates the
- * linked list, BST, and hash table together, then logs it to the
- * action stack).
+ * touch more than one module.
  *
- * SYNC NOTE: addStudent() inserts the exact same Student object into
- * the linked list, the BST, and the hash table. Because all three
- * structures hold a reference to that one object, updateStudent()
- * only needs to mutate it once (via the linked list) — the change is
- * automatically visible through the BST and hash table too, since a
- * student's ID (the BST/hash key) never changes on update. Deleting
- * a student still has to be done in all three structures explicitly,
- * since removing a node from one structure does not remove it from
- * the others.
+ * Every write to student records (add/update/delete) keeps the linked
+ * list, BST, and hash table in sync, and logs the action to the stack.
+ * The graph side is independent and simply delegates straight through.
  */
 public class SystemManager {
 
-    // ---- Member 1: Linked List ----
+    // Member 1
     private final StudentLinkedList linkedList;
 
-    // ---- Member 2: Stack and Queue ----
+    // Member 2
     private final ActionStack actionStack;
     private final ServiceQueue serviceQueue;
 
-    // ---- Member 3: BST and Hashing ----
+    // Member 3
     private final StudentBST bst;
     private final StudentHashTable hashTable;
 
-    // ---- Member 4: Graph ----
+    // Member 4
     private final CampusGraph campusGraph;
     private final GraphTraversal graphTraversal;
 
@@ -55,148 +47,137 @@ public class SystemManager {
         graphTraversal = new GraphTraversal();
     }
 
-    // ------------------------------------------------------------
-    // Student record operations
-    // Member 1 (linked list) does the add/update/delete/display work;
-    // Member 3 (BST + hash table) is kept in sync alongside it.
-    // ------------------------------------------------------------
+    // ================= Student Record Operations =================
 
     /**
-     * Adds a student to the linked list, BST, and hash table together,
-     * then logs the action. The hash table is checked first since it
-     * gives the fastest duplicate-ID check.
+     * Adds a student, keeping linked list, BST, and hash table in sync.
      *
-     * @return true if added, false if the Student ID already exists.
+     * @return "OK" on success, or an error message describing why it failed.
      */
-    public boolean addStudent(String id, String name, String programme, double marks) {
+    public String addStudent(String id, String name, String programme, double marks) {
         if (hashTable.getById(id) != null) {
-            return false; // duplicate ID
+            return "A student with ID \"" + id + "\" already exists.";
         }
+
         Student student = new Student(id, name, programme, marks);
-        linkedList.addStudent(student);
-        bst.insert(student);
-        hashTable.put(student);
-        actionStack.push(new ActionRecord("ADD", id, "Student added"));
-        return true;
+
+        boolean addedToList = linkedList.addStudent(student);
+        boolean addedToBst = bst.insert(student);
+        boolean addedToHash = hashTable.put(student);
+
+        if (!addedToList || !addedToBst || !addedToHash) {
+            // Shouldn't happen given the duplicate check above, but keep
+            // the three structures consistent if it ever does.
+            return "Failed to add student — please try again.";
+        }
+
+        actionStack.push(new ActionRecord("ADD", id, "Added " + name));
+        return "OK";
     }
 
     /**
-     * Updates a student's name, programme, and marks. Only the linked
-     * list needs to be told directly — see the class-level SYNC NOTE
-     * for why the BST and hash table pick up the change automatically.
+     * Updates an existing student's name, programme, and marks across
+     * the linked list, BST, and hash table.
      *
-     * @return true if the student was found and updated, false otherwise.
+     * @return "OK" on success, or an error message.
      */
-    public boolean updateStudent(String id, String newName, String newProgramme, double newMarks) {
-        if (hashTable.getById(id) == null) {
-            return false; // not found
+    public String updateStudent(String id, String newName, String newProgramme, double newMarks) {
+        Student existing = hashTable.getById(id);
+        if (existing == null) {
+            return "No student found with ID \"" + id + "\".";
         }
-        boolean updated = linkedList.updateStudent(id, newName, newProgramme, newMarks);
-        if (updated) {
-            actionStack.push(new ActionRecord("UPDATE", id, "Student record updated"));
-        }
-        return updated;
+
+        linkedList.updateStudent(id, newName, newProgramme, newMarks);
+
+        // BST and hash table hold direct references into the same
+        // Student objects as the linked list, so updating the fields on
+        // the existing object (done inside updateStudent above) is
+        // reflected everywhere automatically — no separate BST/hash
+        // update call is needed here since they share the same object.
+
+        actionStack.push(new ActionRecord("UPDATE", id, "Updated " + newName));
+        return "OK";
     }
 
     /**
-     * Removes a student from the linked list, BST, and hash table
-     * together, then logs the action.
+     * Deletes a student from the linked list, BST, and hash table
+     * together, and logs the deletion.
      *
-     * @return true if the student existed and was removed, false otherwise.
+     * @return "OK" on success, or an error message.
      */
-    public boolean deleteStudent(String id) {
+    public String deleteStudent(String id) {
         Student removed = linkedList.deleteStudent(id);
         if (removed == null) {
-            return false; // not found
+            return "No student found with ID \"" + id + "\".";
         }
+
         bst.delete(id);
         hashTable.remove(id);
-        actionStack.push(new ActionRecord("DELETE", id, "Student removed"));
-        return true;
+
+        actionStack.push(new ActionRecord("DELETE", id, "Deleted " + removed.getName()));
+        return "OK";
     }
 
-    /** Menu item 4 (Member 1): display all records in insertion order (linked list). */
-    public void displayAllStudents() {
+    public void displayAllStudentsLinkedList() {
         linkedList.displayAll();
     }
 
-    /** Menu item 8 (Member 3): display all records in ID order (BST in-order traversal). */
-    public void displayStudentsByBST() {
+    public void displayAllStudentsBST() {
         bst.displayAll();
     }
 
-    /** Menu item 9 (Member 3): fast lookup by ID via the hash table. */
     public Student searchStudentByHash(String id) {
         return hashTable.getById(id);
     }
 
-    // ------------------------------------------------------------
-    // Service request / action history operations
-    // Member 2: ServiceQueue (FIFO requests) + ActionStack (LIFO history)
-    // ------------------------------------------------------------
+    // ================= Stack / Queue Operations =================
 
-    /** Menu item 5 (Member 2): add a service request to the back of the queue. */
     public void addServiceRequest(String studentId, String requestType) {
         serviceQueue.enqueue(new ServiceRequest(studentId, requestType));
     }
 
     /**
-     * Menu item 6 (Member 2): process (dequeue) the next pending service
-     * request and log it to the action history.
-     *
      * @return the processed request, or null if the queue was empty.
      */
     public ServiceRequest processNextServiceRequest() {
         ServiceRequest next = serviceQueue.dequeue();
         if (next != null) {
-            actionStack.push(new ActionRecord("SERVICE", next.getStudentId(),
+            actionStack.push(new ActionRecord("PROCESS_REQUEST", next.getStudentId(),
                     "Processed request: " + next.getRequestType()));
         }
         return next;
     }
 
-    /** (Member 2) Displays all pending service requests, in arrival order. */
     public void displayServiceQueue() {
         serviceQueue.displayQueue();
     }
 
-    /** Menu item 7 (Member 2): display the recent-actions history, most recent first. */
     public void displayRecentActions() {
         actionStack.displayRecentActions();
     }
 
-    // ------------------------------------------------------------
-    // Campus graph operations
-    // Member 4: CampusGraph (locations/roads as an adjacency list)
-    // + GraphTraversal (BFS/DFS over that graph)
-    // ------------------------------------------------------------
+    // ================= Graph Operations =================
 
-    /** Menu item 10 (Member 4): add a campus location (graph vertex). */
     public boolean addCampusLocation(String location) {
         return campusGraph.addLocation(location);
     }
 
-    /** Menu item 11 (Member 4): remove a campus location and its connections. */
     public boolean removeCampusLocation(String location) {
         return campusGraph.removeLocation(location);
     }
 
-    /** Menu item 12 (Member 4): add a two-way connection/road between two locations. */
     public boolean addCampusConnection(String locationA, String locationB) {
         return campusGraph.addConnection(locationA, locationB);
     }
 
-    /** Menu item 13 (Member 4): remove the connection/road between two locations. */
     public boolean removeCampusConnection(String locationA, String locationB) {
         return campusGraph.removeConnection(locationA, locationB);
     }
 
-    /** Menu item 14 (Member 4): display the full campus adjacency list. */
     public void displayCampusConnections() {
         campusGraph.displayConnections();
     }
 
-    /** Menu item 15 (Member 4): traverse the campus network using BFS or DFS. */
     public void traverseCampus(String startLocation, boolean useBFS) {
         graphTraversal.displayTraversal(campusGraph, startLocation, useBFS);
     }
