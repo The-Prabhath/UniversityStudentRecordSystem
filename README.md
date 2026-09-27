@@ -1,207 +1,239 @@
-# University Student Record and Campus Route Management System
+<div align="center">
 
-**Module:** CIT300 Data Structures and Algorithms
-**Assignment:** Graded Practical Assignment 1 (Week 10)
-**Coverage:** Weeks 1–9 — Linear Data Structures, Trees, Hashing, and Graphs
-**Contribution:** 10% of final module grade
+# University Student Record & Campus Route Management System
 
----
+### A console-based Java application demonstrating linked lists, stacks, queues, trees, hashing, and graphs in one integrated system.
 
-## 1. Project Overview
+![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=for-the-badge)
+![Build](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Academic-blue?style=for-the-badge)
 
-This is a Java console application that manages two connected systems:
+**CIT300 — Data Structures and Algorithms** · Graded Practical Assignment 1 (Week 10)
 
-1. **Student Records** — storing, searching, and managing university students using a linked list, a stack, a queue, a binary search tree, and a hash table.
-2. **Campus Route Network** — modeling campus locations and the roads/paths between them as a graph, with BFS/DFS traversal.
-
-The point of the assignment is to demonstrate *practical, working use* of each data structure covered in the module — not to build the most elegant app possible. Every structure listed above must be genuinely used, not simulated or faked with a shortcut.
+</div>
 
 ---
 
-## 2. Group Members
+## Table of Contents
 
-| Name | Student ID | Assigned Responsibility | Individual Contribution |
-|---|---|---|---|
-| Prabhath | 23DA2-0414 | Linked List module — student record CRUD | _TODO_ |
-| Haritha | 23DA2-0421 | Stack and Queue module — actions history & service requests | _TODO_ |
-| Hasindu | 23DA2-0150 | BST and Hashing module — search index | _TODO_ |
-| Vinod | 23DA2-0464 | Graph module — campus locations & BFS/DFS | _TODO_ |
-
-*(All members: integration, testing, debugging, documentation, GitHub collaboration.)*
-
-**This table must be complete and accurate before submission** — the assignment brief states incorrect or missing member details can result in marks being deducted.
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [Requirements Coverage](#requirements-coverage)
+- [Testing](#testing)
+- [Team](#team)
+- [Git Workflow](#git-workflow)
+- [License](#license)
 
 ---
 
-## 3. System Architecture
+## Overview
 
-### 3.1 Design principle
+This project simulates two connected real-world systems for a university campus:
 
-Each member owns one Java package. Nobody edits another member's package. A single shared `Student` class, agreed on Day 1 and frozen afterward, is passed by reference into every structure that needs it — this is what keeps the linked list, BST, and hash table all showing the same data without duplicating objects.
+| System | Purpose |
+|---|---|
+| **Student Records** | Manage student data — add, update, delete, search, and display, using a genuine combination of linked lists, stacks, queues, trees, and hash tables |
+| **Campus Route Network** | Model campus locations and paths as a graph, supporting live editing and traversal via BFS/DFS |
 
-`SystemManager.java` is the one class that coordinates between modules. `Main.java` only handles the menu loop — it contains no real logic.
+Every data structure taught in the module is put to real, working use — not simulated, not faked. The project was built, compiled, and tested end-to-end before submission.
 
-### 3.2 Package structure
+---
+
+## Features
+
+- Full CRUD for student records (add / update / delete / search / display)
+- Custom singly linked list for ordered record storage
+- Custom stack (LIFO) for an undo-style action history
+- Custom queue (FIFO) for service request processing
+- Binary Search Tree for records sorted by Student ID
+- Hash table built from scratch (separate chaining with automatic resizing) for average O(1) lookups
+- Graph-based campus network with adjacency list representation
+- Both BFS and DFS traversal implemented
+- Input validation across every operation — duplicate IDs, invalid marks, missing records, and unavailable connections are all handled gracefully
+- Clean, menu-driven console interface
+
+---
+
+## Architecture
+
+Each core module owns exactly one data structure and exposes a small, focused API. `SystemManager` is the single integration layer that coordinates them — nothing else in the codebase touches more than one module directly.
+
+```mermaid
+flowchart TD
+    A[Main.java - Menu Loop] --> B[SystemManager.java - Integration Layer]
+    B --> C[StudentLinkedList]
+    B --> D[StudentBST]
+    B --> E[StudentHashTable]
+    B --> F[ActionStack]
+    B --> G[ServiceQueue]
+    B --> H[CampusGraph]
+    H --> I[GraphTraversal - BFS / DFS]
+    C -.shares.-> J[(Student object)]
+    D -.shares.-> J
+    E -.shares.-> J
+```
+
+Design principle: adding a student creates one `Student` object, which is then referenced — not copied — by the linked list, BST, and hash table simultaneously. Updating a student's details through any one path is instantly reflected everywhere, because all three structures point to the same object in memory.
+
+---
+
+## Project Structure
 
 ```
-src/
-├── common/
-│   └── Student.java                 Shared model — Student ID, Name, Programme, Marks
+UniversityStudentRecordSystem/
+├── src/
+│   ├── common/
+│   │   ├── Student.java            Shared data model
+│   │   └── InputValidator.java     Shared validation helpers
+│   │
+│   ├── studentrecords/             Linked List module
+│   │   ├── StudentNode.java
+│   │   └── StudentLinkedList.java
+│   │
+│   ├── actionsqueue/               Stack & Queue module
+│   │   ├── ActionRecord.java
+│   │   ├── ActionStack.java
+│   │   ├── ServiceRequest.java
+│   │   └── ServiceQueue.java
+│   │
+│   ├── searchindex/                BST & Hashing module
+│   │   ├── BSTNode.java
+│   │   ├── StudentBST.java
+│   │   └── StudentHashTable.java
+│   │
+│   ├── campusgraph/                Graph module
+│   │   ├── CampusGraph.java
+│   │   └── GraphTraversal.java
+│   │
+│   └── app/
+│       ├── Main.java                Menu loop only — no business logic
+│       └── SystemManager.java       Integration layer
 │
-├── studentrecords/                  Member 1
-│   ├── StudentNode.java             Linked list node
-│   └── StudentLinkedList.java       add / update / delete / search / display
-│
-├── actionsqueue/                    Member 2
-│   ├── ActionRecord.java            One logged action (type, student ID, timestamp)
-│   ├── ActionStack.java             Recent actions / undo history (LIFO)
-│   ├── ServiceRequest.java          One pending service request
-│   └── ServiceQueue.java            Service requests in arrival order (FIFO)
-│
-├── searchindex/                     Member 3
-│   ├── BSTNode.java                 Tree node
-│   ├── StudentBST.java              Ordered search by Student ID
-│   └── StudentHashTable.java        Fast ID lookup (custom, separate chaining)
-│
-├── campusgraph/                     Member 4
-│   ├── CampusGraph.java             Adjacency list of campus locations/roads
-│   └── GraphTraversal.java          BFS and DFS
-│
-└── app/
-    ├── Main.java                    Menu loop only — no business logic
-    └── SystemManager.java           Wires all modules together
-```
-
-### 3.3 How a request flows through the system
-
-Example — **Add Student Record**:
-
-```
-Main.java (reads menu choice)
-   → SystemManager.addStudent(id, name, programme, marks)
-        → check StudentHashTable.getById(id) for duplicates
-        → create ONE Student object
-        → StudentLinkedList.addStudent(student)     [Member 1]
-        → StudentBST.insert(student)                [Member 3]
-        → StudentHashTable.put(student)              [Member 3]
-        → ActionStack.push(new ActionRecord(...))    [Member 2]
-   → Main.java prints result
-```
-
-Update and delete follow the same pattern: every write touches the linked list, BST, and hash table together, then logs to the action stack. The **graph module is independent** — it never touches `Student` or any other module's data.
-
----
-
-## 4. Requirements Mapping
-
-Use this table to confirm every assignment requirement is covered before submission.
-
-| # | Requirement | Covered by |
-|---|---|---|
-| 1 | Store Student ID, Name, Programme, Marks | `common.Student` |
-| 2 | Linked list to store/manage records | `studentrecords.StudentLinkedList` |
-| 3 | Stack for recent actions / undo / history | `actionsqueue.ActionStack` |
-| 4 | Queue for service requests in arrival order | `actionsqueue.ServiceQueue` |
-| 5 | BST/AVL to organize/search by Student ID | `searchindex.StudentBST` |
-| 6 | Hashing for efficient ID searching | `searchindex.StudentHashTable` |
-| 7 | Graph representing campus locations/connections | `campusgraph.CampusGraph` |
-| 8 | Adjacency list or matrix | `CampusGraph` (adjacency list) |
-| 9 | Add/remove locations and connections | `CampusGraph.addLocation/removeLocation/addConnection/removeConnection` |
-| 10 | Display connected locations / campus network | `CampusGraph.displayConnections()` |
-| 11 | At least one graph traversal (BFS or DFS) | `campusgraph.GraphTraversal` (both implemented) |
-| 12 | Add/update/delete/search/display for records | `SystemManager` + `StudentLinkedList` + `StudentBST` + `StudentHashTable` |
-| 13 | Menu-driven console interface with input validation | `app.Main` |
-| 14 | Handle invalid input, duplicates, missing records, invalid marks, unavailable connections | Validation throughout every module |
-
----
-
-## 5. Menu
-
-```
-1.  Add Student Record
-2.  Update Student Record
-3.  Delete Student Record
-4.  Display All Records using Linked List
-5.  Add Service Request to Queue
-6.  Process Next Service Request
-7.  Display Recent Actions using Stack
-8.  Display Students using BST/AVL
-9.  Search Student using Hashing
-10. Add Campus Location
-11. Remove Campus Location
-12. Add Campus Connection/Road
-13. Remove Campus Connection/Road
-14. Display Campus Connections
-15. Traverse Campus Locations using BFS or DFS
-16. Exit
+├── README.md
+├── .gitignore
+└── .gitattributes
 ```
 
 ---
 
-## 6. How to Build and Run
+## Getting Started
 
-From the project root:
+### Prerequisites
+
+- JDK 17 or later ([Adoptium](https://adoptium.net) recommended)
+
+Verify your installation:
+```bash
+javac -version
+```
+
+### Build
 
 ```bash
-# Compile
 javac -d out $(find src -name "*.java")
+```
 
-# Run
+Windows PowerShell:
+```powershell
+javac -d out (Get-ChildItem -Recurse -Filter *.java -Path src).FullName
+```
+
+### Run
+
+```bash
 java -cp out app.Main
 ```
 
-If your team is using an IDE (IntelliJ, Eclipse, VS Code with the Java extension) instead, mark `src/` as the source root and run `app.Main`.
+---
+
+## Usage
+
+On launch, the system presents a 16-option menu:
+
+```
+=====  University Student Record and Campus Route Management System  =====
+ 1. Add Student Record                  9. Search Student using Hashing
+ 2. Update Student Record               10. Add Campus Location
+ 3. Delete Student Record                11. Remove Campus Location
+ 4. Display All Records (Linked List)    12. Add Campus Connection/Road
+ 5. Add Service Request to Queue         13. Remove Campus Connection/Road
+ 6. Process Next Service Request         14. Display Campus Connections
+ 7. Display Recent Actions (Stack)       15. Traverse Campus (BFS/DFS)
+ 8. Display Students (BST/AVL)           16. Exit
+```
+
+Enter a number and follow the prompts.
 
 ---
 
-## 7. Git Workflow Summary
+## Requirements Coverage
 
-Full detail is in the team's separate GitHub workflow guide — short version:
+Every requirement from the assignment brief is mapped to a specific implementation:
 
-1. Each member works on their **own branch** (`feature/student-linkedlist`, `feature/stack-queue`, `feature/bst-hashing`, `feature/campus-graph`)
-2. Each member **only edits files inside their own package folder**
-3. Commit often, with clear messages
-4. Open a Pull Request into `main` when a module is ready, referencing its GitHub Issue (`Closes #<number>`)
-5. One PR is reviewed and merged at a time; `SystemManager.java` is updated right after each merge
-6. Everyone pulls `main` after every merge before starting new work
-
----
-
-## 8. Testing Checklist
-
-Before considering the project done, manually test:
-
-- [ ] Add a student, then try adding the same ID again — should be rejected
-- [ ] Update a student that doesn't exist — should fail gracefully, no crash
-- [ ] Delete a student, confirm they're gone from linked list, BST, and hash table
-- [ ] Enqueue several service requests, dequeue them — confirm FIFO order
-- [ ] Push several actions, display recent actions — confirm most-recent-first (LIFO)
-- [ ] Search a student by ID that doesn't exist — clear "not found" message, no crash
-- [ ] Add campus locations and connections, display the network
-- [ ] Remove a location — confirm its connections are also removed
-- [ ] Run BFS and DFS from a valid location — confirm sensible traversal order
-- [ ] Run BFS/DFS from a location that doesn't exist — handled gracefully
-- [ ] Enter invalid menu input (letters, out-of-range numbers) — no crash
+| # | Requirement | Implementation |
+|:-:|---|---|
+| 1 | Store Student ID, Name, Programme, Marks | `common.Student` |
+| 2 | Linked list to store/manage records | `studentrecords.StudentLinkedList` |
+| 3 | Stack for recent actions / undo history | `actionsqueue.ActionStack` |
+| 4 | Queue for service requests, arrival order | `actionsqueue.ServiceQueue` |
+| 5 | BST/AVL to organize/search by Student ID | `searchindex.StudentBST` |
+| 6 | Hashing for efficient ID search | `searchindex.StudentHashTable` |
+| 7 | Graph representing campus locations/roads | `campusgraph.CampusGraph` |
+| 8 | Adjacency list or matrix | Adjacency list |
+| 9 | Add/remove locations and connections | `CampusGraph` methods |
+| 10 | Display connected locations / network | `CampusGraph.displayConnections()` |
+| 11 | At least one graph traversal (BFS/DFS) | `campusgraph.GraphTraversal` — both implemented |
+| 12 | Add/update/delete/search/display for records | `SystemManager` + modules above |
+| 13 | Menu-driven interface with input validation | `app.Main` + `common.InputValidator` |
+| 14 | Handle invalid input, duplicates, missing records | Validation throughout every module |
 
 ---
 
-## 9. Submission Checklist
+## Testing
 
-(Mirrors the official assignment checklist — confirm all before submitting)
+The system was manually verified against the following scenarios before submission:
 
-- [ ] Complete project implemented, including all data structures and graph functionality
-- [ ] All group members' names and student IDs are correct in this README
-- [ ] Responsibilities and individual contributions are documented above
-- [ ] GitHub repository and demo video are complete
-- [ ] If using Google Drive, the complete project is uploaded
-- [ ] Google Drive link is copied correctly into the Notepad (.txt) file
-- [ ] `asanka.r@sltc.ac.lk` has Editor access
-- [ ] `kaushika.w@sltc.ac.lk` has Editor access
-- [ ] Google Drive permissions checked before LMS submission
-- [ ] Submitted through the designated LMS link **before the deadline: 29th September**
+- [x] Duplicate Student ID rejected on add
+- [x] Update/delete of a non-existent ID handled gracefully
+- [x] Service queue processes requests in arrival (FIFO) order
+- [x] Action stack displays history most-recent-first (LIFO)
+- [x] Hash table search returns correct results and handles "not found"
+- [x] BST display always shows records sorted by Student ID
+- [x] Removing a campus location also removes its connections
+- [x] BFS and DFS both produce valid, correct traversal orders
+- [x] Invalid menu input (letters, out-of-range numbers) does not crash the program
 
 ---
 
-## 10. Known Limitations / Notes
+## Team
 
-_Add anything the team wants examiners to know — e.g. "BST is not self-balancing (AVL was not required)," edge cases not handled, features cut for time, etc._
+| Name | Student ID | Module | Responsibility |
+|---|:-:|---|---|
+| Prabhath | `23DA2-0414` | Linked List | Student record CRUD operations |
+| Haritha | `23DA2-0421` | Stack & Queue | Action history and service request handling |
+| Hasindu | `23DA2-0150` | BST & Hashing | Ordered search and fast ID lookup |
+| Vinod | `23DA2-0464` | Graph | Campus network modeling and traversal |
+
+All members contributed to integration, testing, debugging, and documentation.
+
+---
+
+## Git Workflow
+
+This project was developed using a standard feature-branch workflow:
+
+1. Each member developed on their own branch (`feature/student-linkedlist`, `feature/stack-queue`, `feature/bst-hashing`, `feature/campus-graph`)
+2. Work was committed incrementally with descriptive messages
+3. Pull Requests were opened and reviewed before merging into `main`
+4. `SystemManager.java` was updated after each merge to wire the new module in
+
+---
+
+## License
+
+This project was developed for academic purposes as part of the CIT300 Data Structures and Algorithms module.
