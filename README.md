@@ -212,12 +212,12 @@ The system was manually verified against the following scenarios before submissi
 
 ## Team
 
-| Name | Student ID | Module | Responsibility |
-|---|:-:|---|---|
-| Prabhath | `23DA2-0414` | Linked List | Student record CRUD operations |
-| Haritha | `23DA2-0421` | Stack & Queue | Action history and service request handling |
-| Hasindu | `23DA2-0150` | BST & Hashing | Ordered search and fast ID lookup |
-| Vinod | `23DA2-0464` | Graph | Campus network modeling and traversal |
+| Member | Name | Student ID | Module | Responsibility |
+|:-:|---|:-:|---|---|
+| Member 1 | Prabhath | `23DA2-0414` | Linked List | Student record CRUD operations |
+| Member 2 | Haritha | `23DA2-0421` | Stack & Queue | Action history and service request handling |
+| Member 3 | Hasindu | `23DA2-0150` | BST & Hashing | Ordered search and fast ID lookup |
+| Member 4 | Vinod | `23DA2-0464` | Graph | Campus network modeling and traversal |
 
 All members contributed to integration, testing, debugging, and documentation.
 
